@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  phone     String    @unique
+  name      String
+  role      Role      @default(EMPLOYEE)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  
+  checkIns  CheckIn[]
+  makeupRequests MakeupRequest[]
+  personalDeadlines Deadline[] @relation("PersonalDeadlines")
+  
+  @@map("users")
+}
+
+model CheckIn {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  checkedAt DateTime @default(now())
+  date      String
+  isMakeup  Boolean  @default(false)
+  
+  @@unique([userId, date])
+  @@map("checkins")
+}
+
+model MakeupRequest {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  date        String
+  reason      String?
+  status      MakeupStatus @default(PENDING)
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  
+  @@map("makeup_requests")
+}
+
+model Deadline {
+  id          String    @id @default(uuid())
+  title       String
+  date        String
+  description String?
+  isCompany   Boolean   @default(true)
+  createdBy   String
+  userId      String?
+  user        User?     @relation("PersonalDeadlines", fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  
+  @@map("deadlines")
+}
+
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+enum MakeupStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
